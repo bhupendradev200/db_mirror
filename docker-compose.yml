@@ -1,0 +1,138 @@
+services:
+  mysql-master:
+    image: mysql:8.0
+    container_name: mysql-master
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: appdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-master-data:/var/lib/mysql
+      - ./mysql/master/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+      - ./mysql/master/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [dbnet]
+
+  mysql-replica-1:
+    build:
+      context: ./mysql/replicas
+      dockerfile: Dockerfile
+    container_name: mysql-replica-1
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "3307:3306"
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+    volumes:
+      - mysql-replica-1-data:/var/lib/mysql
+      - ./mysql/replicas/replica-1/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [dbnet]
+
+  mysql-replica-2:
+    build:
+      context: ./mysql/replicas
+      dockerfile: Dockerfile
+    container_name: mysql-replica-2
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "3308:3306"
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+    volumes:
+      - mysql-replica-2-data:/var/lib/mysql
+      - ./mysql/replicas/replica-2/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [dbnet]
+
+  mysql-replica-3:
+    build:
+      context: ./mysql/replicas
+      dockerfile: Dockerfile
+    container_name: mysql-replica-3
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+    ports:
+      - "3309:3306"
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+    volumes:
+      - mysql-replica-3-data:/var/lib/mysql
+      - ./mysql/replicas/replica-3/my.cnf:/etc/mysql/conf.d/my.cnf:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [dbnet]
+
+  express-app:
+    build:
+      context: ./express-app
+      dockerfile: Dockerfile
+    container_name: express-app
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      MASTER_HOST: mysql-master
+      MASTER_PORT: "3306"
+      MASTER_USER: appuser
+      MASTER_PASSWORD: apppass
+      REPLICA1_HOST: mysql-replica-1
+      REPLICA1_PORT: "3306"
+      REPLICA2_HOST: mysql-replica-2
+      REPLICA2_PORT: "3306"
+      REPLICA3_HOST: mysql-replica-3
+      REPLICA3_PORT: "3306"
+      REPLICA_USER: appuser
+      REPLICA_PASSWORD: apppass
+      DB_NAME: appdb
+      LOG_REPLICATION_POLL_MS: "2000"
+      MONITOR_USER: monuser
+      MONITOR_PASSWORD: monpass
+      LAGADMIN_USER: lagadmin
+      LAGADMIN_PASSWORD: lagpass
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+      mysql-replica-1:
+        condition: service_healthy
+      mysql-replica-2:
+        condition: service_healthy
+      mysql-replica-3:
+        condition: service_healthy
+    networks: [dbnet]
+
+volumes:
+  mysql-master-data:
+  mysql-replica-1-data:
+  mysql-replica-2-data:
+  mysql-replica-3-data:
+
+networks:
+  dbnet:
+    driver: bridge
