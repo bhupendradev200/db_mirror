@@ -2,6 +2,7 @@ import { loadConfig } from "./config/env.js";
 import { createPools } from "./db/pools.js";
 import { createLogger } from "./lib/logger.js";
 import { createApp } from "./app.js";
+import { createMetrics } from "./observability/metrics.js";
 
 import { ItemsRepository } from "./repositories/itemsRepository.js";
 import { ReplicationStatusRepository } from "./repositories/replicationStatusRepository.js";
@@ -12,6 +13,7 @@ import { ReplicationService } from "./services/replicationService.js";
 async function main() {
   const config = loadConfig();
   const logger = createLogger();
+  const metrics = createMetrics();
 
   const pools = createPools(config);
   const replicaPoolsByName = new Map(pools.replicas.map((r) => [r.name, r.pool]));
@@ -33,7 +35,8 @@ async function main() {
     replicationService,
     itemsRepo,
     replicas: pools.replicas,
-    logger
+    logger,
+    metrics
   });
 
   app.listen(config.port, () => logger.info(`API listening on :${config.port}`));

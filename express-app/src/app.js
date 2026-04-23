@@ -9,10 +9,12 @@ import { itemsRoutes } from "./routes/itemsRoutes.js";
 import { readBalancerRoutes } from "./routes/readBalancerRoutes.js";
 import { replicationRoutes } from "./routes/replicationRoutes.js";
 import { adminRoutes } from "./routes/adminRoutes.js";
+import { metricsRoutes } from "./routes/metricsRoutes.js";
 
-export function createApp({ itemsService, replicationService, itemsRepo, replicas, logger }) {
+export function createApp({ itemsService, replicationService, itemsRepo, replicas, logger, metrics }) {
   const app = express();
   app.use(express.json());
+  if (metrics?.metricsMiddleware) app.use(metrics.metricsMiddleware);
 
   app.get("/health", healthController());
 
@@ -24,6 +26,7 @@ export function createApp({ itemsService, replicationService, itemsRepo, replica
   app.use(readBalancerRoutes(replicas, itemsRepo, logger));
   app.use(replicationRoutes(replCtrl));
   app.use(adminRoutes(admCtrl));
+  if (metrics?.metricsHandler) app.use(metricsRoutes(metrics.metricsHandler));
 
   // Minimal error boundary to keep responses clean
   // eslint-disable-next-line no-unused-vars
