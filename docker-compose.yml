@@ -1,6 +1,8 @@
 services:
   mysql-master:
-    image: mysql:8.0
+    build:
+      context: ./mysql/master
+      dockerfile: Dockerfile
     container_name: mysql-master
     restart: unless-stopped
     environment:
@@ -10,8 +12,6 @@ services:
       - "3306:3306"
     volumes:
       - mysql-master-data:/var/lib/mysql
-      - ./mysql/master/my.cnf:/etc/mysql/conf.d/my.cnf:ro
-      - ./mysql/master/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
       interval: 5s
@@ -22,7 +22,7 @@ services:
   mysql-replica-1:
     build:
       context: ./mysql/replicas
-      dockerfile: Dockerfile
+      dockerfile: replica-1/Dockerfile
     container_name: mysql-replica-1
     restart: unless-stopped
     environment:
@@ -34,7 +34,6 @@ services:
         condition: service_healthy
     volumes:
       - mysql-replica-1-data:/var/lib/mysql
-      - ./mysql/replicas/replica-1/my.cnf:/etc/mysql/conf.d/my.cnf:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
       interval: 5s
@@ -45,7 +44,7 @@ services:
   mysql-replica-2:
     build:
       context: ./mysql/replicas
-      dockerfile: Dockerfile
+      dockerfile: replica-2/Dockerfile
     container_name: mysql-replica-2
     restart: unless-stopped
     environment:
@@ -57,7 +56,6 @@ services:
         condition: service_healthy
     volumes:
       - mysql-replica-2-data:/var/lib/mysql
-      - ./mysql/replicas/replica-2/my.cnf:/etc/mysql/conf.d/my.cnf:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
       interval: 5s
@@ -68,7 +66,7 @@ services:
   mysql-replica-3:
     build:
       context: ./mysql/replicas
-      dockerfile: Dockerfile
+      dockerfile: replica-3/Dockerfile
     container_name: mysql-replica-3
     restart: unless-stopped
     environment:
@@ -80,7 +78,6 @@ services:
         condition: service_healthy
     volumes:
       - mysql-replica-3-data:/var/lib/mysql
-      - ./mysql/replicas/replica-3/my.cnf:/etc/mysql/conf.d/my.cnf:ro
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpass"]
       interval: 5s
